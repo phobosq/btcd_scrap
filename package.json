@@ -1,0 +1,17 @@
+{
+  "name": "btcd",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "phobos",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.2",
+    "axios": "^0.24.0",
+    "bs58": "^4.0.1",
+    "request": "^2.88.2"
+  }
+}
