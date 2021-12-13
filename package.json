@@ -11,7 +11,8 @@
   "dependencies": {
     "async": "^3.2.2",
     "axios": "^0.24.0",
-    "bs58": "^4.0.1",
+    "base58check": "^2.0.0",
+    "crypto-js": "^4.1.1",
     "request": "^2.88.2"
   }
 }

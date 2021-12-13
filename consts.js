@@ -36,7 +36,23 @@ const params = {
         },
         putNewBlockListObject: (height, nextblockhash) => {
             return { "blockHeight": height + 1, "blockHash": nextblockhash, "status": "new" };
-        }
+        },
+        getFirstTransaction: () => { return params.esHost + '/transaction_list/_search?q=status:new,processing&size=1&sort=height:asc' },
+        updateTransactionList: () => { return params.esHost + '/transaction_list/_update_by_query?refresh&conflicts=proceed' },
+        updateTransactionObject: (txid, status) => {
+            return {
+                "script": {
+                    "source": "ctx._source.status = '" + status + "'",
+                    "lang": "painless"
+                },
+                "query": {
+                    "term": {
+                        "txid": txid
+                    }
+                }
+            };
+        },
+        getPreviousTransactionById: (txid) => { return params.esHost +  '/transactions/transaction/' + txid; }
     }
 };
 
