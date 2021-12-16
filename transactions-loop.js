@@ -32,7 +32,7 @@ function pubkeyToAddress(pubkey) {
 
 var tasks = [];
 
-for (var i = 0; i < 1; i++) {
+for (var i = 0; i < 100000; i++) {
     tasks.push((seriesCallback) => {
         console.log('fetching first new transaction from ES...');
 
@@ -44,11 +44,18 @@ for (var i = 0; i < 1; i++) {
 
                     http_wrapper.get(params.settings.esQueries.getFirstTransaction())
                         .then(function (response) {
-                            txid = response.hits.hits[0]._source.txid;
-                            blockHash = response.hits.hits[0]._source.blockHash;
+                            if (response.hits.total.value === 0) {
+                                console.log("No suitable records, awaiting 10 secs");
+                                new Promise(resolve => setTimeout(resolve, 10000)).then((response) => {
+                                    done("retrying");
+                                })();
+                            } else {
+                                txid = response.hits.hits[0]._source.txid;
+                                blockHash = response.hits.hits[0]._source.blockHash;
 
-                            console.log("found hashes:\n  txid: " + txid + "\n  blockHash: " + blockHash);
-                            done(null, txid, blockHash)
+                                console.log("found hashes:\n  txid: " + txid + "\n  blockHash: " + blockHash);
+                                done(null, txid, blockHash);
+                            }
                         })
                 }
                 catch (e) {
