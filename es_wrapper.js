@@ -1,10 +1,13 @@
 var axios = require('axios');
 
+var DEBUG = 0;
+
 const get = async (url, body = null) => {
     if (body != null) {
         ESoptions.body = body;
     }
     try {
+        if (DEBUG) console.log(url);
         var responseObject = await axios.get(url);
         var returnValue = await responseObject.data;
         return returnValue;

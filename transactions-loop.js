@@ -32,7 +32,7 @@ function pubkeyToAddress(pubkey) {
 
 var tasks = [];
 
-for (var i = 0; i < 100000; i++) {
+for (var i = 0; i < 1000; i++) {
     tasks.push((seriesCallback) => {
         console.log('fetching first new transaction from ES...');
 
@@ -54,6 +54,10 @@ for (var i = 0; i < 100000; i++) {
                                 blockHash = response.hits.hits[0]._source.blockHash;
 
                                 console.log("found hashes:\n  txid: " + txid + "\n  blockHash: " + blockHash);
+                                // testing
+                                // txid = 'a3b0e9e7cddbbe78270fa4182a7675ff00b92872d8df7d14265a2b1e379a9d33';
+                                // blockHash = '00000000b0c5a240b2a61d2e75692224efd4cbecdf6eaf4cc2cf477ca7c270e7';
+                                
                                 done(null, txid, blockHash);
                             }
                         })
@@ -124,46 +128,65 @@ for (var i = 0; i < 100000; i++) {
                             }],
                             rawTransaction: transaction
                         };
+
+                        done(null, transactionObject);
                     } else { // from m addresses to n addresses
                         var fromAddresses = [], toAddresses = [];
 
-                        transaction.vin.forEach(element => {
-                            if (DEBUG) console.log(element);
-                            http_wrapper.get(params.settings.esQueries.getPreviousTransactionById(element.txid))
-                                .then(function(previousTransaction) {
-                                    if (DEBUG) console.log(previousTransaction);
-                                    fromAddresses.push(previousTransaction.toAddressArray[element.vout]);
-                                })
-                                .catch(function(e){
-                                    done(e);
-                                });
-                        });
-
-                        transaction.vout.forEach(element => {
-                            var targetAddress = "";
-
-                            if (element.scriptPubKey.address) {
-                                targetAddress = element.scriptPubKey.address;
-                            } else {
-                                let asmScript = element.scriptPubKey.asm.toString();
-                                let pubKey = asmScript.replace(" .*$", "");
-                                targetAddress = pubkeyToAddress(pubKey);
+                        var promises = [];
+                        var txOutputs = [];
+                        // console.log(transaction);
+                        transaction.vin.forEach((element) => {
+                            // if (DEBUG) console.log(element);
+                            try {
+                                //console.log(params.settings.esQueries.getPreviousTransactionById(element.txid));
+                                promises.push(http_wrapper.get(params.settings.esQueries.getPreviousTransactionById(element.txid)));
+                                txOutputs[element.txid] = element.vout;
                             }
-                            toAddresses.push({
-                                address: targetAddress,
-                                quantity: element.value
-                            });
+                            catch (e) {
+                                console.log(e);
+                                done(e);
+                            }
                         });
 
-                        transactionObject = {
-                            txid: txid,
-                            blockHash: blockHash,
-                            fromAddressArray: fromAddresses,
-                            toAddressArray: toAddresses,
-                            rawTransaction: transaction
-                        }
+                        Promise.all(promises)
+                            .then((response) => {
+                                response.forEach((element) => {
+                                    fromAddresses.push(element._source.toAddressArray[txOutputs[element._id]]);
+                                })
+
+                                transaction.vout.forEach((element) => {
+                                    var targetAddress = "";
+        
+                                    if (element.scriptPubKey.address) {
+                                        targetAddress = element.scriptPubKey.address;
+                                    } else {
+                                        let asmScript = element.scriptPubKey.asm.toString();
+                                        let pubKey = asmScript.replace(" .*$", "");
+                                        targetAddress = pubkeyToAddress(pubKey);
+                                    }
+                                    toAddresses.push({
+                                        address: targetAddress,
+                                        quantity: element.value
+                                    });
+                                });
+        
+                                transactionObject = {
+                                    txid: txid,
+                                    blockHash: blockHash,
+                                    fromAddressArray: fromAddresses,
+                                    toAddressArray: toAddresses,
+                                    rawTransaction: transaction
+                                }
+        
+                                done(null, transactionObject);
+        
+                            })
+                            .catch((response) => {
+                                console.log(response);
+                                done(response);
+                            });
                     }
-                    done(null, transactionObject);
                 }
                 catch (e) {
                     console.log(e);
@@ -199,12 +222,12 @@ for (var i = 0; i < 100000; i++) {
                 }
             }
             ], function (error, result) {
-                seriesCallback(null, 1);
+                seriesCallback(error, result);
             });
     })
 }
 
 async.series(tasks, function (error, result) {
-    console.log(error);
+    if (error) console.log(error);
     console.log(result);
 });
