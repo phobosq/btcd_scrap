@@ -121,8 +121,15 @@ for (var i = 0; i < 1; i++) {
                         var fromAddresses = [], toAddresses = [];
 
                         transaction.vin.forEach(element => {
-                            var previousTransaction = http_wrapper.get(params.settings.esQueries.getPreviousTransactionById(txid))
-                            fromAddresses.push(previousTransaction.toAddressArray[element.vout]);
+                            if (DEBUG) console.log(element);
+                            http_wrapper.get(params.settings.esQueries.getPreviousTransactionById(element.txid))
+                                .then(function(previousTransaction) {
+                                    if (DEBUG) console.log(previousTransaction);
+                                    fromAddresses.push(previousTransaction.toAddressArray[element.vout]);
+                                })
+                                .catch(function(e){
+                                    done(e);
+                                });
                         });
 
                         transaction.vout.forEach(element => {

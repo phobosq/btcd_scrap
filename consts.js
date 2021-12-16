@@ -1,6 +1,6 @@
 const params = {
     btcdHost: 'http://192.168.1.200:8332',
-    esHost: 'http://192.168.1.210:9200',
+    esHost: 'http://192.168.1.212:9200',
     btcdHeaders: {
         'Content-Type': 'text/plain',
         'Authorization': 'Basic cGhvYm9zOjE='
